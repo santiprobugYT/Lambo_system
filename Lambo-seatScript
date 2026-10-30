@@ -1,0 +1,80 @@
+local seatPart = script.Parent
+local Model = seatPart.Parent
+local ProxPrompt = seatPart.ProximityPrompt
+local OwnerShip = ProxPrompt.OwnerShip
+local Lock = ProxPrompt.Lock
+local RS = game:GetService("ReplicatedStorage")
+local Events = RS:WaitForChild("Events")
+local VehicleFailed = Events:WaitForChild("VehicleFailed")
+local StartSound = seatPart.Start
+
+seatPart:GetPropertyChangedSignal("Occupant"):Connect(function()
+	if seatPart.Occupant == nil then
+		seatPart.ProximityPrompt.Enabled = true
+	else
+		seatPart.ProximityPrompt.Enabled = false
+	end
+end)
+
+seatPart.ProximityPrompt.Triggered:Connect(function(player)
+	if player.Cars.Lambo.Value == 1  then
+		if OwnerShip.Value == "" and Lock.Value == false then
+			OwnerShip.Value = player.Name
+			seatPart:Sit(player.Character.Humanoid)
+			StartSound:Play()
+
+		elseif OwnerShip.Value == player.Name and Lock.Value == true then
+			OwnerShip.Value = player.Name
+			seatPart:Sit(player.Character.Humanoid)
+			StartSound:Play()
+
+		elseif OwnerShip.Value ~= player.Name and Lock.Value == false then
+			OwnerShip.Value = player.Name
+			seatPart:Sit(player.Character.Humanoid)
+			StartSound:Play()
+
+		elseif OwnerShip.Value == player.Name and Lock.Value == false then
+			OwnerShip.Value = player.Name
+			seatPart:Sit(player.Character.Humanoid)
+			StartSound:Play()
+
+		elseif OwnerShip.Value ~= player.Name and Lock.Value == true then
+			VehicleFailed:FireClient(player, "EnteringFailed")
+		end
+	else
+		player.PlayerGui.Lambo.Enabled = true
+	end
+end)
+
+VehicleFailed.OnServerEvent:Connect(function(player, Arg)
+	if Arg == "Locked" then
+		Lock.Value = true
+		OwnerShip.Value = player.Name
+	elseif Arg == "Lock" then
+		OwnerShip.Value = player.Name
+		Lock.Value = false
+	end
+end)
+
+while task.wait(2) do
+	if workspace.Cars:FindFirstChild("Lambo") then
+		local orientation = Model.MeshPart.CFrame:pointToWorldSpace(Vector3.new(0, 4, 0)) -- Vector apuntando hacia abajo
+		local isUpsideDown = orientation.Y < -250
+		
+		if isUpsideDown then
+			print(orientation)
+			local attachment = Instance.new("Attachment", Model.MeshPart)
+			local AngularVelocity = Instance.new("AngularVelocity", Model.MeshPart)
+			AngularVelocity.MaxTorque = 30000
+			AngularVelocity.AngularVelocity = Vector3.new(0,0,10000)
+			AngularVelocity.Attachment0 = attachment
+			AngularVelocity.RelativeTo = Enum.ActuatorRelativeTo.Attachment0
+		else
+			if Model.MeshPart:FindFirstChild("AngularVelocity") then
+				Model.MeshPart:FindFirstChild("AngularVelocity"):Destroy()
+				Model.MeshPart:FindFirstChild("Attachment"):Destroy()
+			end
+		end
+	else
+	end
+end
