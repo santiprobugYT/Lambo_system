@@ -1,0 +1,158 @@
+local tweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local tweenInfo = TweenInfo.new(0.4)
+local character = script.Parent
+local connection = nil
+local seat = nil
+
+character.Humanoid.Seated:Connect(function(active, seatPart)
+	if connection ~= nil then connection:Disconnect() connection = nil end
+	
+	if seatPart == nil then 
+		if seat == nil then return end
+		local attachment = nil
+		local height = -math.huge
+		for i, child in ipairs(seat:GetChildren()) do
+			if child.ClassName ~= "Attachment" then continue end
+			if child.WorldPosition.Y <= height then continue end
+			height = child.WorldPosition.Y
+			attachment = child
+		end
+		character.PrimaryPart.CFrame = attachment.WorldCFrame
+		seat = nil
+		return
+	end	
+	
+	if seatPart.Name ~= "Lambo" then return end
+	
+	seat = seatPart
+	
+
+	-- Sounds
+	local SoundMotor = seatPart:WaitForChild("Low")
+	local NitroInicio = seatPart:WaitForChild("NitroInicio1")
+	local NitroMedio = seatPart:WaitForChild("NitroMedio1")
+	local NitroFinal = seatPart:WaitForChild("NitroFinal2")
+
+	-- Attachment Extras
+	local NitroUp = seatPart:WaitForChild("NitroUp")
+	local Nitro = seatPart:WaitForChild("Nitro")
+	local Smoke = Nitro:FindFirstChild("Smoke")
+	local Fire = Nitro:FindFirstChild("ParticleEmitter")
+	local Force = Nitro:FindFirstChild("Nitro")
+	local Force2 = NitroUp:FindFirstChild("Nitro")
+
+	-- Lights
+	local LightPart1 = seatPart.Parent:WaitForChild("Light1")
+	local LightPart2 = seatPart.Parent:WaitForChild("Light2")
+	local Light1 = LightPart1:FindFirstChild("Light")
+	local Light2 = LightPart2:FindFirstChild("Light")
+
+	UIS.InputBegan:Connect(function(input, gameproccess)
+		if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S then
+			if character.Humanoid:GetState() == Enum.HumanoidStateType.Seated then
+				SoundMotor:Play()
+				SoundMotor.Volume = 0.1
+				wait()
+				SoundMotor.Volume = 0.2
+				wait()
+				SoundMotor.Volume = 0.3
+				wait()
+				SoundMotor.Volume = 0.4
+			else
+				SoundMotor.Volume = 0
+				SoundMotor:Stop()
+			end
+		end
+
+		if input.KeyCode == Enum.KeyCode.Q and seatPart.ThrottleFloat == 1 then
+			while seatPart.ThrottleFloat == 1 do
+				if seatPart.ThrottleFloat == 1 then
+					Force.Enabled = true
+					Force.Force = Vector3.new(12000, 0, 0)
+					Force2.Enabled = true
+					Force2.Force = Vector3.new(6000, 0, 0)
+					Fire.Enabled = true
+					Smoke.Enabled = true
+
+					NitroInicio:Play()
+					NitroMedio:Play()
+					NitroMedio.Looped = true
+					wait()
+					NitroInicio.TimePosition = 0
+					task.wait(999999)
+				end
+			end
+		end
+
+		if input.KeyCode == Enum.KeyCode.L then
+			if character.Humanoid:GetState() == Enum.HumanoidStateType.Seated then
+				if Light2.Enabled == false and Light1.Enabled == false then
+					Light2.Enabled = true
+					Light1.Enabled = true
+				else
+					Light2.Enabled = false
+					Light1.Enabled = false
+				end
+			end
+		end
+	end)
+
+	UIS.InputEnded:Connect(function(input, gameproccess)
+		if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S then
+			SoundMotor.Volume = 0.4
+			wait()
+			SoundMotor.Volume = 0.3
+			wait()
+			SoundMotor.Volume = 0.2
+			wait()
+			SoundMotor.Volume = 0.1
+			SoundMotor:Stop()
+		end
+
+		if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.W then
+			Force.Enabled = false
+			Force.Force = Vector3.new(0, 0, 0)
+			Force2.Enabled = false
+			Force2.Force = Vector3.new(0, 0, 0)
+			Fire.Enabled = false
+			Smoke.Enabled = false
+		end
+
+		if input.KeyCode == Enum.KeyCode.Q then
+			NitroFinal:Play()
+			NitroMedio:Stop()
+			NitroMedio.Looped = false
+			NitroMedio.TimePosition = 0
+			task.wait(1.3)
+			NitroFinal.TimePosition = 0
+			NitroFinal:Stop()
+		end
+	end)
+	
+	local attachmentFL = seatPart.Parent.PrimaryPart.AttachmentFL
+	local attachmentFR = seatPart.Parent.PrimaryPart.AttachmentFR
+
+	local cylindricalBL = seatPart.Parent.WheelBL.CylindricalConstraint
+	local cylindricalBR = seatPart.Parent.WheelBR.CylindricalConstraint
+	
+	local maxAngularVelocity = seatPart.MaxSpeed / (seatPart.Parent.WheelBR.Size.Y / 4)
+
+	connection = seatPart.Changed:Connect(function(property)
+		if property == "SteerFloat" then
+			local orientation = Vector3.new(0, -seatPart.SteerFloat * seatPart.TurnSpeed, 90)
+			tweenService:Create(attachmentFL, tweenInfo, {Orientation = orientation}):Play()		
+			tweenService:Create(attachmentFR, tweenInfo, {Orientation = orientation}):Play()
+
+
+		elseif property == "ThrottleFloat" then
+			local torque = math.abs(seatPart.ThrottleFloat) * seatPart.Torque
+			if torque == 0 then torque = 2000 end
+			local angularVelocity = math.sign(seatPart.ThrottleFloat) * maxAngularVelocity
+			cylindricalBL.MotorMaxTorque = torque
+			cylindricalBR.MotorMaxTorque = torque
+			cylindricalBL.AngularVelocity = angularVelocity
+			cylindricalBR.AngularVelocity = angularVelocity
+		end
+	end)
+end)
