@@ -1,0 +1,27 @@
+local Player = script.Parent.Parent.Parent
+
+local Yes = script.Parent.Main.Yes
+local No = script.Parent.Main.No
+local Inf = script.Parent.Main.Inf
+local Frame = script.Parent.Main
+local Price = script.Parent.Price
+local Car = script.Parent.Car
+
+Yes.MouseButton1Click:Connect(function()
+	if Player.leaderstats.Cash.Value >= Price.Value then
+		Player.leaderstats.Cash.Value -= Price.Value
+		script.Parent.Enabled = false
+		Player.Cars:FindFirstChild(script.Parent.Name).Value = 1
+
+	elseif Player.leaderstats.Cash.Value < Price.Value then
+		Inf.Text = ("You only have $"..Player.leaderstats.Cash.Value.." and you need $"..Price.Value)
+		wait(1)
+		Inf.Text = ("Do you want to buy "..Car.Value.." For "..Price.Value.."$?")
+	end
+end)
+
+No.MouseButton1Click:Connect(function()
+	script.Parent.Enabled = false
+end)
+
+Inf.Text = ("Do you want to buy "..Car.Value.." For "..Price.Value.."$?")
